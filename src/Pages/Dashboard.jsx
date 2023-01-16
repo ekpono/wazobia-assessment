@@ -1,19 +1,62 @@
-import React, {Fragment} from 'react';
+import React, {Fragment, useEffect, useState} from 'react';
 import { Menu, Transition } from '@headlessui/react'
 import {ChevronDownIcon, EnvelopeIcon, PhoneIcon, XMarkIcon} from '@heroicons/react/20/solid'
-import { PlusIcon as PlusIconMini } from '@heroicons/react/20/solid'
+import { PlusIcon as PlusIconMini, ArchiveBoxXMarkIcon } from '@heroicons/react/20/solid'
 import { PlusIcon as PlusIconOutline } from '@heroicons/react/24/outline'
 import CreateNoteModal from "../components/Modals/CreateNoteModal.jsx";
+import useAuth from "../hooks/useAuth.js";
+import useItem from "../hooks/useItem.jsx";
 function Dashboard() {
+    const { user, logout, resendVerificationEmail } = useAuth()
+    const [message, setMessage ] = useState('')
+    const [ showModal, setShowModal ] = useState(false);
+    const { success, items, deleteItem, loadingState } = useItem()
+    const [ mode, setMode ] = useState('Create')
+    const [ selectedItem, setSelectedItem] = useState(null)
+    const setAuthUser = () => {
+        location.href = '/verify-user'
+    }
+
+    const editItem = (item) => {
+        setMode('Edit')
+        setSelectedItem(item)
+        handleShowModal()
+    }
+    const logoutUser = async () => {
+        await logout()
+        location.href = '/login'
+    }
+    const handleShowModal = () => {
+        setShowModal((showModal) => !showModal);
+    };
+
+    const deleteItemPrompt = (item) => {
+        let response = prompt(`Delete ${item.name}? Type yes to proceed`)
+        if (response == 'yes') {
+            deleteItem(item.uuid)
+        }else {
+            alert('not Deleted')
+        }
+    }
+
+    const resentVerificationEmail = async () => {
+        let response = await resendVerificationEmail()
+        setMessage(response.data.message)
+    }
+
     return (
         <>
-            <div className="relative bg-amber-200 opacity-60">
+            { ! user.email_verified_at && (<div className="relative bg-amber-200 opacity-60">
                 <div className="mx-auto max-w-7xl py-3 px-3 sm:px-6 lg:px-8">
                     <div className=" sm:px-16 sm:text-center text-black">
-                        <p>You have not verified your email address. Click <a href="#" className="text-blue-500">here</a> to resend verification link.</p>
+                        <p>You have not verified your email address. Click&nbsp;
+                            <button onClick={resentVerificationEmail} className="text-blue-500">here</button>&nbsp;to resend verification link.</p>
+                        <p className="text-green-500">{message}</p>
                     </div>
                 </div>
+
             </div>
+            )}
             <div className="border-b">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 bg-white">
                     <div className="nav flex flex-col sm:flex-row justify-between items-center h-16 ">
@@ -23,7 +66,7 @@ function Dashboard() {
                                 <div>
                                     <Menu.Button className="flex items-center rounded-full hover:text-gray-600">
                                         <span className="sr-only">Open options</span>
-                                        John Jones
+                                        {user.first_name} {user.last_name}
                                         <ChevronDownIcon className="h-5 w-5" aria-hidden="true" />
                                     </Menu.Button>
                                 </div>
@@ -41,12 +84,12 @@ function Dashboard() {
                                         <div className="py-2 px-4">
                                             <Menu.Item>
                                                 {({ active }) => (
-                                                    <a
-                                                        href="#"
+                                                    <button
+                                                        onClick={logoutUser}
                                                         className="text-red-500"
                                                     >
                                                         Logout
-                                                    </a>
+                                                    </button>
                                                 )}
                                             </Menu.Item>
                                         </div>
@@ -57,27 +100,38 @@ function Dashboard() {
                     </div>
                 </div>
             </div>
-            <div className="bg-gray-100  h-[calc(100vh-100px)]">
+            <div className="bg-gray-100  h-[calc(100vh-50px)]">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 pt-4">
+                    { success && (<p className="text-green-500">{success}</p>) }
+                    { loadingState && (<p className="text-green-500">Loading...</p>) }
+                    { items && Object.keys(items).length === 0 && (
+                        <p className="flex flex-col gap-5 mt-5 justify-center items-center">
+                            <ArchiveBoxXMarkIcon className="h-10 w-10 " />
+                            No item found...
+                        </p>
+                    )}
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
-                        <div className=" p-6 rounded-lg border bg-white h- max-w-sm">
+                    { items && Object.values(items).map((item, key) => (
+                        <div key={key} className=" p-6 rounded-lg border bg-white h- max-w-sm">
                             <div className="text-gray-700 text-base mb-4">
                                 <p className="text-gray-500">Name</p>
-                                <p className="">Item 1</p>
+                                <p className="">{item.name}</p>
 
                                 <div className="mt-4">
                                     <p className="text-gray-500">Description</p>
-                                    <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit. Aliquam consequatur, distinctio ipsam libero omnis sequi suscipit voluptatibus voluptatum!</p>
+                                    <p>{item.description}</p>
                                 </div>
                             </div>
                             <div className="flex justify-end gap-3">
                                 <button
                                     type="button"
+                                    onClick={(() => editItem(item))}
                                     className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                                 >
                                     Edit
                                 </button>
                                 <button
+                                    onClick={(() => deleteItemPrompt(item))}
                                     type="button"
                                     className="inline-flex items-center rounded-md  bg-gray-500 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                                 >
@@ -86,10 +140,13 @@ function Dashboard() {
 
                             </div>
                         </div>
+                    ))}
                     </div>
+
                 </div>
                 <div className="fixed transition duration-150 ease-in-out bottom-5 right-5" >
                     <button
+                        onClick={handleShowModal}
                         type="button"
                         className="inline-flex items-center rounded-full border border-transparent bg-indigo-600 p-2 text-white shadow-sm"
                     >
@@ -97,7 +154,12 @@ function Dashboard() {
                     </button>
                 </div>
             </div>
-            <CreateNoteModal />
+            {showModal && (<CreateNoteModal
+                showModal={showModal}
+                handleClose={handleShowModal}
+                mode={mode}
+                selectedItem={selectedItem}
+            />)}
         </>
     );
 }
