@@ -37,7 +37,6 @@ function Dashboard() {
         setMessage(response.data.message)
     }
 
-
     return (
         <>
             { ! user.email_verified_at && (<div className="relative bg-amber-200 opacity-60">
