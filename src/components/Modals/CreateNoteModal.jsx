@@ -8,7 +8,7 @@ import useItem from "../../hooks/useItem.jsx";
 
 function CreateNoteModal(prop) {
     const [open, setOpen] = useState(prop.showModal)
-    const { createItem } = useItem()
+    const { createItem, updateItem } = useItem()
     const closeModal = () => {
         prop.handleClose()
     }
@@ -19,13 +19,17 @@ function CreateNoteModal(prop) {
 
     const formik = useFormik({
         initialValues: {
-            name: '',
-            description: '',
+            name: prop.mode === 'Edit' ? prop.selectedItem.name : '',
+            description: prop.mode === 'Edit' ? prop.selectedItem.description : '',
         },
         validationSchema: ItemSchema,
         onSubmit: async (values, { setErrors, setSubmitting, resetForm }) => {
             try {
-                await createItem(values.name, values.description);
+                if (prop.mode === 'Create') {
+                    await createItem(values.name, values.description);
+                }else {
+                    await updateItem(prop.selectedItem.uuid, values.name, values.description);
+                }
                 closeModal()
             } catch (error) {
                 resetForm();
@@ -119,7 +123,7 @@ function CreateNoteModal(prop) {
                                                             type="submit"
                                                             className="ml-3 inline-flex justify-center rounded-md border border-transparent bg-gray-500 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
                                                         >
-                                                            Create Event
+                                                            {prop.mode === 'Create' ? 'Create Event' : 'Edit Event'}
                                                         </button>
                                                     </div>
                                                 </div>

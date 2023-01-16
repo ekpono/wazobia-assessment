@@ -8,7 +8,7 @@ import useAuth from "../hooks/useAuth.js";
 function Register() {
     const [showPassword, setShowPassword] = useState(false);
     const isMountedRef = useIsMountedRef();
-    const { register, errorBag } = useAuth()
+    const { register, errorBag, loadingState } = useAuth()
     const handleShowPassword = () => {
         setShowPassword((show) => !show);
     };
@@ -17,7 +17,8 @@ function Register() {
         firstName: Yup.string().min(2, 'Too Short!').max(50, 'Too Long!').required('First name required'),
         lastName: Yup.string().min(2, 'Too Short!').max(50, 'Too Long!').required('Last name required'),
         email: Yup.string().email('Email must be a valid email address').required('Email is required'),
-        password: Yup.string().required('Password is required'),
+        password: Yup.string().required('Password is required')
+            .min(7, 'Must contain more than seven characters')
     });
 
     const formik = useFormik({
@@ -55,6 +56,7 @@ function Register() {
                         <p className="mt-2 text-center text-sm text-gray-600">
                             Already have an account?  <a href="/login" className="font-light text-blue-500 hover:text-blue-500">Log in</a>
                         </p>
+                        {loadingState && (<p className="text-center mt-2">Loading...</p>)}
                     </div>
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <div className="md:flex gap-3">
@@ -74,6 +76,7 @@ function Register() {
                                         className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
                                     />
                                 </div>
+                                <div className="text-red-500 py-3 text-sm">{errors.firstName && touched.firstName && errors.firstName}</div>
                             </div>
                             <div className="w-full mt-4 md:mt-0">
                                 <label htmlFor="email" className="block text-sm font-light text-gray-700">
@@ -91,8 +94,14 @@ function Register() {
                                         className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
                                     />
                                 </div>
+                                <div className="text-red-500 py-3 text-sm">{errors.lastName && touched.lastName && errors.lastName}</div>
                             </div>
                         </div>
+                        { errorBag && (
+                            <div className="text-red-500 py-3 text-sm">
+                                { errorBag.message }
+                            </div>
+                        )}
                         <div>
                             <label htmlFor="email" className="block text-sm font-light text-gray-700">
                                 Email address
@@ -111,6 +120,7 @@ function Register() {
                                     className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-400 focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
                                 />
                             </div>
+                            <div className="text-red-500 py-3 text-sm">{errors.email && touched.email && errors.email}</div>
                         </div>
                         <div>
                             <label htmlFor="password" className="block text-sm font-medium text-gray-700">
@@ -132,10 +142,12 @@ function Register() {
                                         : <EyeIcon className="h-5 w-5 text-gray-400 cursor-pointer " aria-hidden="true" />}
                                 </div>
                             </div>
+                            <div className="text-red-500 py-3 text-sm">{errors.password && touched.password && errors.password}</div>
                         </div>
 
                         <div>
                             <button
+                                disabled={loadingState}
                                 type="submit"
                                 className="flex w-full justify-center mb-4 rounded-md border border-transparent bg-gray-500 py-3 px-6 text-sm font-medium text-white hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                             >

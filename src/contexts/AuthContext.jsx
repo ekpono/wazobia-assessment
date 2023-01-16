@@ -28,22 +28,25 @@ const AuthContext = createContext({
 
 function AuthProvider({children}) {
     const [state, dispatch] = useReducer(reducer, initialState);
-    const [authUser, setUser] = useState(null);
+    const [ loadingState, setLoadingState] = useState(false);
     const [errorBag, setErrorBag ] = useState(null)
 
-    const login = (email, password) => {
+    const login =  (email, password) => {
+        setLoadingState(true)
         axios.post('/tokens', {
             email: email,
             password: password
         }).then(response => {
             localStorage.setItem("user", JSON.stringify(response.data));
+            setLoadingState(false)
             dispatch({
                 type: 'INITIALISE',
                 payload: { isAuthenticated: true, user: response.data.user }
             });
             location.href = '/dashboard'
         }).catch(error => {
-            setErrorBag(error)
+            setLoadingState(false)
+            setErrorBag(error.response.data)
             dispatch({
                 type: 'INITIALISE',
                 payload: { errorBag }
@@ -51,18 +54,20 @@ function AuthProvider({children}) {
         })
     }
 
-    const register = (first_name, last_name, email, password) => {
-        axios.post('/me', {
+    const register =async (first_name, last_name, email, password) => {
+        setLoadingState(true)
+        return await axios.post('/me', {
             first_name,
             last_name,
             email: email,
             password: password,
         }).then(response => {
-            const token  =  response.data.token;
+            setLoadingState(false)
             localStorage.setItem("user", JSON.stringify(response.data));
             window.location.href = '/dashboard'
         }).catch(error => {
-            setErrorBag(error)
+            setLoadingState(false)
+            setErrorBag(error.response.data)
             dispatch({
                 type: 'INITIALISE',
                 payload: { errorBag }
@@ -95,7 +100,8 @@ function AuthProvider({children}) {
             register,
             logout,
             resendVerificationEmail,
-            emailVerify
+            emailVerify,
+            loadingState
         }}>
             {children}
         </AuthContext.Provider>

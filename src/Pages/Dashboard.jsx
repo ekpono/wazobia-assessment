@@ -1,7 +1,7 @@
 import React, {Fragment, useEffect, useState} from 'react';
 import { Menu, Transition } from '@headlessui/react'
 import {ChevronDownIcon, EnvelopeIcon, PhoneIcon, XMarkIcon} from '@heroicons/react/20/solid'
-import { PlusIcon as PlusIconMini } from '@heroicons/react/20/solid'
+import { PlusIcon as PlusIconMini, ArchiveBoxXMarkIcon } from '@heroicons/react/20/solid'
 import { PlusIcon as PlusIconOutline } from '@heroicons/react/24/outline'
 import CreateNoteModal from "../components/Modals/CreateNoteModal.jsx";
 import useAuth from "../hooks/useAuth.js";
@@ -10,10 +10,17 @@ function Dashboard() {
     const { user, logout, resendVerificationEmail } = useAuth()
     const [message, setMessage ] = useState('')
     const [ showModal, setShowModal ] = useState(false);
-    const { success, items, deleteItem } = useItem()
-
+    const { success, items, deleteItem, loadingState } = useItem()
+    const [ mode, setMode ] = useState('Create')
+    const [ selectedItem, setSelectedItem] = useState(null)
     const setAuthUser = () => {
         location.href = '/verify-user'
+    }
+
+    const editItem = (item) => {
+        setMode('Edit')
+        setSelectedItem(item)
+        handleShowModal()
     }
     const logoutUser = async () => {
         await logout()
@@ -96,6 +103,13 @@ function Dashboard() {
             <div className="bg-gray-100  h-[calc(100vh-50px)]">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8 pt-4">
                     { success && (<p className="text-green-500">{success}</p>) }
+                    { loadingState && (<p className="text-green-500">Loading...</p>) }
+                    { items && Object.keys(items).length === 0 && (
+                        <p className="flex flex-col gap-5 mt-5 justify-center items-center">
+                            <ArchiveBoxXMarkIcon className="h-10 w-10 " />
+                            No item found...
+                        </p>
+                    )}
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
                     { items && Object.values(items).map((item, key) => (
                         <div key={key} className=" p-6 rounded-lg border bg-white h- max-w-sm">
@@ -111,6 +125,7 @@ function Dashboard() {
                             <div className="flex justify-end gap-3">
                                 <button
                                     type="button"
+                                    onClick={(() => editItem(item))}
                                     className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                                 >
                                     Edit
@@ -142,6 +157,8 @@ function Dashboard() {
             {showModal && (<CreateNoteModal
                 showModal={showModal}
                 handleClose={handleShowModal}
+                mode={mode}
+                selectedItem={selectedItem}
             />)}
         </>
     );

@@ -7,12 +7,13 @@ import useIsMountedRef from '../hooks/useIsMountedRef';
 
 
 function Login() {
-    const { login, errorBag } = useAuth()
+    const { login, errorBag, loadingState } = useAuth()
+    console.log(errorBag)
     const [showPassword, setShowPassword] = useState(false);
     const isMountedRef = useIsMountedRef();
     const LoginSchema = Yup.object().shape({
         email: Yup.string().email('Email must be a valid email address').required('Email is required'),
-        password: Yup.string().required('Password is required')
+        password: Yup.string().required('Password is required').min(7, 'Password must be greater than 7')
     });
 
     const formik = useFormik({
@@ -49,6 +50,8 @@ function Login() {
                         <p className="mt-2 text-center text-sm text-gray-600">
                             If you have no account,  <a href="/register" className="font-light text-blue-500 hover:text-blue-500">Sign up</a>
                         </p>
+                        {loadingState && (<p className="text-center mt-2">Loading...</p>)}
+
                     </div>
                     <form className="space-y-6" autoComplete="off" onSubmit={handleSubmit}>
                         <div>
@@ -68,7 +71,7 @@ function Login() {
                                     value={values.email}
                                     className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-300 focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
                                 />
-                                {errors.email && touched.email && errors.email}
+                                <div className="text-red-500 py-3 text-sm">{errors.email && touched.email && errors.email}</div>
                                 { errorBag && (
                                     <div className="text-red-500 py-3 text-sm">
                                         { errorBag.message }
@@ -85,6 +88,7 @@ function Login() {
                                     type={showPassword ? 'text' : 'password'}
                                     name="password"
                                     onChange={handleChange}
+                                    required
                                     value={values.password}
                                     onBlur={handleBlur}
                                     className="block w-full appearance-none rounded-md border border-gray-300 px-3 py-2 placeholder-gray-200 focus:border-gray-500 focus:outline-none focus:ring-gray-500 sm:text-sm"
@@ -96,11 +100,12 @@ function Login() {
                                         : <EyeIcon className="h-5 w-5 text-gray-400 cursor-pointer " aria-hidden="true" />}
                                 </div>
                             </div>
+                            <div className="text-red-500 py-3 text-sm">{errors.password && touched.password && errors.password}</div>
                         </div>
 
                         <div>
                             <button
-                                disabled={isSubmitting}
+                                disabled={loadingState}
                                 type="submit"
                                 className="flex w-full justify-center mb-4 rounded-md border border-transparent bg-gray-500 py-3 px-6 text-sm font-medium text-white hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                             >

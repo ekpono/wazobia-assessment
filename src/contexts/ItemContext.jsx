@@ -17,15 +17,13 @@ const reducer = (state, action) => {
                 items: state.items = action.payload,
             };
         case "ADD_ITEMS":
-            console.log(action.payload.item)
             return {
                 ...state,
                 items: [...state.items, action.payload.item],
             };
 
         case "EDIT_ITEM":
-            const updatedItem = action.payload;
-
+            const updatedItem = action.payload.item;
             const updatedItems = state.items.map((item) => {
                 if (item.uuid === updatedItem.uuid) {
                     return updatedItem;
@@ -54,14 +52,16 @@ const reducer = (state, action) => {
 function ItemProvider({children}) {
     const [state, dispatch] = useReducer(reducer, initialState);
     const [success, setSuccess ] = useState(null)
-
+    const [loadingState, setLoadingState ] = useState(false)
     useEffect( () => {
          getItems()
     }, [dispatch]);
 
 
     const getItems = (page = 1, count = 10) => {
+        setLoadingState(true)
         return axios.get(`/items?page=${page}&count=${count}`).then(response => {
+            setLoadingState(false)
             dispatch({
                 type: 'GET_ITEMS',
                 payload: response.data.items
@@ -70,8 +70,10 @@ function ItemProvider({children}) {
     }
 
     const createItem = (name, description) => {
+        setLoadingState(true)
         return axios.post('/items', {name, description}).then(response => {
             setSuccess('Item successfully created')
+            setLoadingState(false)
             dispatch({
                 type: 'ADD_ITEMS',
                 payload: response.data
@@ -83,17 +85,22 @@ function ItemProvider({children}) {
         return axios.get(`/item/${uuid}`)
     }
 
-    const updateItem = (uuid) => {
-        return axios.put(`/items/${uuid}`).then(response => {
+    const updateItem = (uuid, name, description) => {
+        setLoadingState(true)
+        return axios.put(`/items/${uuid}`, {name, description}).then(response => {
+            setSuccess('Item successfully updated')
+            setLoadingState(false)
             dispatch({
-                type: 'EDIT_ITEMS',
+                type: 'EDIT_ITEM',
                 payload: response.data
             })
         })
     }
 
     const deleteItem = (uuid) => {
+        setLoadingState(true)
         return axios.delete(`/items/${uuid}`).then(response => {
+            setLoadingState(false)
             dispatch({
                 type: 'REMOVE_ITEMS',
                 payload: uuid
@@ -108,6 +115,7 @@ function ItemProvider({children}) {
         <ItemContext.Provider value={{
             items,
             success,
+            loadingState,
             getItems,
             createItem,
             getItemByUuid,

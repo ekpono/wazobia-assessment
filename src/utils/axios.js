@@ -1,8 +1,8 @@
 import axios from 'axios';
+import { baseUrl } from "../config.js";
 
 const axiosInstance = axios.create({
-    baseURL: "https://test-api.sytbuilder.com",
-    // baseURL: process.env.APP_API_BASE_URL,
+    baseURL: baseUrl
 });
 
 axiosInstance.interceptors.request.use(function (config) {
